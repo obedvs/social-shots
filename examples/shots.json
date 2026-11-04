@@ -1,0 +1,186 @@
+{
+  "brand": {
+    "name": "Habitly",
+    "icon": "assets/icon.png",
+    "colors": {
+      "bg": "#120C2E",
+      "bg2": "#2A1B6B",
+      "accent": "#5EE6D0",
+      "text": "#FFFFFF"
+    }
+  },
+  "output": "out",
+  "images": [
+    {
+      "id": "x-hero",
+      "template": "hero",
+      "format": "x",
+      "badge": {
+        "es": "Nuevo",
+        "en": "New"
+      },
+      "headline": {
+        "es": "Tus hábitos, *por fin* bajo control",
+        "en": "Your habits, *finally* under control"
+      },
+      "subhead": {
+        "es": "Pasos, agua, sueño y rachas en una sola app.",
+        "en": "Steps, water, sleep and streaks in one app."
+      },
+      "screenshots": [
+        "screens/home.png"
+      ]
+    },
+    {
+      "id": "x-duo",
+      "template": "duo",
+      "format": "x",
+      "headline": {
+        "es": "Mide lo que *importa*",
+        "en": "Measure what *matters*"
+      },
+      "subhead": {
+        "es": "Gráficas claras, sin ruido.",
+        "en": "Clear charts, no noise."
+      },
+      "screenshots": [
+        "screens/home.png",
+        "screens/stats.png"
+      ]
+    },
+    {
+      "id": "li-trio",
+      "template": "trio",
+      "format": "linkedin",
+      "headline": {
+        "es": "Todo tu día en *una app*",
+        "en": "Your whole day in *one app*"
+      },
+      "screenshots": [
+        "screens/stats.png",
+        "screens/home.png",
+        "screens/habit.png"
+      ]
+    },
+    {
+      "id": "ig-hero",
+      "template": "hero",
+      "format": "ig-square",
+      "badge": {
+        "es": "Disponible en iOS y Android",
+        "en": "On iOS and Android"
+      },
+      "headline": {
+        "es": "Construye *rachas* que duran",
+        "en": "Build *streaks* that last"
+      },
+      "screenshots": [
+        "screens/habit.png"
+      ]
+    },
+    {
+      "id": "ig-portrait-duo",
+      "template": "duo",
+      "format": "ig-portrait",
+      "headline": {
+        "es": "Pequeños pasos, *grandes cambios*",
+        "en": "Small steps, *big changes*"
+      },
+      "subhead": {
+        "es": "Descárgala gratis.",
+        "en": "Download it free."
+      },
+      "screenshots": [
+        "screens/home.png",
+        "screens/stats.png"
+      ]
+    },
+    {
+      "id": "story-hero",
+      "template": "hero",
+      "format": "story",
+      "badge": {
+        "es": "Nuevo",
+        "en": "New"
+      },
+      "headline": {
+        "es": "Tu mejor versión empieza *hoy*",
+        "en": "Your best self starts *today*"
+      },
+      "subhead": {
+        "es": "Link en bio",
+        "en": "Link in bio"
+      },
+      "screenshots": [
+        "screens/home.png"
+      ]
+    },
+    {
+      "id": "story-trio",
+      "template": "trio",
+      "format": "story",
+      "headline": {
+        "es": "Hábitos, progreso y *rachas*",
+        "en": "Habits, progress and *streaks*"
+      },
+      "screenshots": [
+        "screens/stats.png",
+        "screens/home.png",
+        "screens/habit.png"
+      ]
+    },
+    {
+      "id": "ph-hero",
+      "template": "hero",
+      "format": "ph",
+      "headline": {
+        "es": "El tracker de hábitos que *sí usarás*",
+        "en": "The habit tracker you'll *actually use*"
+      },
+      "subhead": {
+        "es": "Hecho con Expo para iOS y Android.",
+        "en": "Built with Expo for iOS and Android."
+      },
+      "screenshots": [
+        "screens/stats.png"
+      ]
+    },
+    {
+      "id": "ig-statement",
+      "template": "statement",
+      "format": "ig-square",
+      "badge": {
+        "es": "Ya disponible",
+        "en": "Out now"
+      },
+      "headline": {
+        "es": "12 días de racha. *¿Y tú?*",
+        "en": "12-day streak. *What's yours?*"
+      },
+      "subhead": {
+        "es": "Habitly — gratis en App Store y Google Play",
+        "en": "Habitly — free on the App Store and Google Play"
+      }
+    },
+    {
+      "id": "x-statement",
+      "template": "statement",
+      "format": "x",
+      "headline": {
+        "es": "Lanzamos *Habitly*",
+        "en": "Meet *Habitly*"
+      },
+      "subhead": {
+        "es": "El tracker de hábitos más simple.",
+        "en": "The simplest habit tracker."
+      }
+    }
+  ],
+  "i18n": {
+    "languages": [
+      "es",
+      "en"
+    ],
+    "mode": "single"
+  }
+}

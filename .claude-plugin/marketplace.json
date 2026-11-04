@@ -1,0 +1,12 @@
+{
+  "name": "social-shots",
+  "description": "Social media images for your mobile app",
+  "owner": { "name": "Obed" },
+  "plugins": [
+    {
+      "name": "social-shots",
+      "source": "./",
+      "description": "Turn a mobile app (Expo / React Native) into on-brand social media images with phone mockups, headlines and captions — in one language, several, or bilingual."
+    }
+  ]
+}
