@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Habitly",
+    "slug": "habitly",
+    "icon": "./icon.png",
+    "splash": {
+      "backgroundColor": "#120C2E"
+    }
+  }
+}

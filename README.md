@@ -61,32 +61,21 @@ You'll get `social-shots/` in your project with the images in `out/`, the plan i
 `shots.json`, and captions for each language. Re-run it any time; edit `shots.json` and
 re-render to tweak copy or colors.
 
-## Languages
+## What you get
 
-| mode | output | text |
-|------|--------|------|
-| `single` | `out/*.png` | one language |
-| `multi` | `out/<lang>/*.png` | same set, one folder per language |
-| `bilingual` | `out/es+en/*.png` | primary headline + translation as a subtitle line |
+- **Languages:** one set in one language, one set per language (`out/es/`, `out/en/`), or
+  bilingual images with the translation as a subtitle line (`out/es+en/`). Latin, Cyrillic,
+  Greek and Vietnamese work out of the box; CJK, Arabic, Thai and others need a Noto Sans
+  file in `brand.fonts.fallback`.
+- **Templates:** `hero` (1 phone), `duo` (2 tilted phones), `trio` (3 phones),
+  `statement` (icon + text).
+- **Formats:** X, LinkedIn, `og:image`, Instagram square and 4:5, Stories / Reels cover,
+  Product Hunt gallery.
 
-Any text field can be a string or `{ "es": "...", "en": "..." }`. Screenshot paths may use
-`{lang}` (`screens/{lang}/1.png`) and fall back to the primary language or `screens/1.png`.
-
-## Templates and formats
-
-Templates: `hero` (1 phone), `duo` (2 tilted phones), `trio` (3 phones), `statement` (icon + text).
-
-| format | size | use |
-|--------|------|-----|
-| `x` | 1200×675 | X / Bluesky / Threads |
-| `linkedin` | 1200×627 | LinkedIn |
-| `og` | 1200×630 | link preview (`og:image`) |
-| `ig-square` | 1080×1080 | Instagram / Facebook feed |
-| `ig-portrait` | 1080×1350 | Instagram feed (4:5) |
-| `story` | 1080×1920 | Stories, Reels / TikTok cover |
-| `ph` | 1270×760 | Product Hunt gallery |
-
-See [SKILL.md](SKILL.md) for the full `shots.json` schema.
+The full reference lives in one place each: the workflow, modes, formats and copy rules in
+[SKILL.md](SKILL.md), every `shots.json` field in [shots.schema.json](shots.schema.json)
+(add `"$schema": "<path>/shots.schema.json"` for editor autocomplete), and sample output in
+[examples/](examples/).
 
 ## Render manually
 
@@ -95,6 +84,21 @@ npm install
 npm run render -- examples/shots.json --out out
 npm run render -- examples/shots.json --mode bilingual --langs es,en --out out
 ```
+
+`--out` is relative to the current directory. Run `npm run render` with no arguments for
+every option.
+
+## Evals
+
+`evals/` holds three test cases in the `claude plugin eval` format: a full English run on
+an Expo app, a bilingual app with no screenshots yet, and a quick accent-color re-render.
+From the repo root:
+
+```bash
+claude plugin eval . --allow-tools Write,Edit,Bash --scaffold
+```
+
+These are real, billed model runs.
 
 ## How it works
 

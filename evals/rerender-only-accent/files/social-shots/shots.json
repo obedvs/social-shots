@@ -1,0 +1,45 @@
+{
+  "brand": {
+    "name": "Habitly",
+    "icon": "../icon.png",
+    "colors": {
+      "bg": "#120C2E",
+      "bg2": "#2A1B6B",
+      "accent": "#5EE6D0",
+      "text": "#FFFFFF"
+    }
+  },
+  "output": "out",
+  "images": [
+    {
+      "id": "launch-x",
+      "template": "hero",
+      "format": "x",
+      "badge": "New",
+      "headline": "Your habits, *finally* under control",
+      "subhead": "Steps, water, sleep and streaks in one app.",
+      "screenshots": [
+        "screens/home.png"
+      ]
+    },
+    {
+      "id": "launch-story",
+      "template": "hero",
+      "format": "story",
+      "badge": "New",
+      "headline": "Your best self starts *today*",
+      "subhead": "Link in bio",
+      "screenshots": [
+        "screens/home.png"
+      ]
+    },
+    {
+      "id": "hook-ig",
+      "template": "statement",
+      "format": "ig-square",
+      "badge": "Out now",
+      "headline": "12-day streak. *What's yours?*",
+      "subhead": "Habitly — free on the App Store and Google Play"
+    }
+  ]
+}

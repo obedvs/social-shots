@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: expo-single-language
+expected_outcome: |
+  The agent reads app.json and constants/Colors.ts to pick the brand name, icon and a
+  palette (dark bg from the splash color, accent from Colors.accent), looks at the three
+  screenshots, shows a short plan table with headlines before rendering, writes
+  social-shots/shots.json (single language, X and Instagram formats, highlights with
+  *asterisks*, no emojis), renders every image successfully into social-shots/out/,
+  reviews the PNGs, and writes social-shots/captions.md with one section per image.
+context:
+  scaffold_script: place-files.sh

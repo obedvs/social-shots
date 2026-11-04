@@ -2,7 +2,8 @@
  * social-shots renderer
  *
  * Usage:
- *   npx tsx <skill-dir>/scripts/render.ts <path/to/shots.json> [--only id1,id2] [--out dir]
+ *   node <skill-dir>/node_modules/tsx/dist/cli.mjs <skill-dir>/scripts/render.ts <path/to/shots.json> [options]
+ *   (run without arguments for the option list)
  *
  * Reads a shots.json config (see SKILL.md for the schema) and renders one PNG per
  * entry in `images`, using Satori (layout -> SVG) and resvg (SVG -> PNG).
@@ -32,8 +33,13 @@ interface Brand {
     text: string; // headline color
     muted?: string; // subhead color
   };
-  /** Optional custom fonts (TTF/OTF/WOFF, not WOFF2). Defaults to bundled Inter. */
-  fonts?: { regular?: string; bold?: string };
+  /**
+   * Optional custom fonts (TTF/OTF/WOFF, not WOFF2). Defaults to bundled Inter, which
+   * covers Latin, Latin-ext, Cyrillic, Greek and Vietnamese. `fallback` lists extra font
+   * files tried for glyphs the main fonts lack (e.g. a Noto Sans JP/KR/SC for CJK, or
+   * Noto Sans Arabic/Hebrew/Thai).
+   */
+  fonts?: { regular?: string; bold?: string; fallback?: string[] };
   /** Phone bezel color. Default #0B0B0F */
   bezel?: string;
 }
@@ -153,19 +159,67 @@ function loadImage(path: string): LoadedImage {
   return { src: `data:${mime};base64,${buf.toString("base64")}`, w: width, h: height };
 }
 
-function loadFonts(brand: Brand, baseDir: string) {
-  const inter = (weight: number) =>
-    readFileSync(join(SKILL_DIR, "node_modules/@fontsource/inter/files", `inter-latin-${weight}-normal.woff`));
+type FontWeight = 400 | 600 | 800;
+interface FontEntry {
+  name: string;
+  data: Buffer;
+  weight: FontWeight;
+  style: "normal";
+}
 
-  const regular = brand.fonts?.regular ? readFileSync(resolve(baseDir, brand.fonts.regular)) : inter(400);
-  const bold = brand.fonts?.bold ? readFileSync(resolve(baseDir, brand.fonts.bold)) : inter(800);
-  const semibold = brand.fonts?.bold ? bold : inter(600);
+/**
+ * Unicode subsets of the bundled Inter, one file each. Satori looks for a missing glyph
+ * in every *other* font family it has loaded (never in a second file of the same
+ * family), so each subset gets its own family name; the text uses "Brand" and the rest
+ * act as fallbacks. That is what makes Polish, Turkish, Russian, Greek or Vietnamese copy
+ * render instead of "NO GLYPH" boxes. CJK, Arabic, Hebrew, Thai etc. still need a font
+ * passed via brand.fonts.fallback.
+ */
+const INTER_SUBSETS = ["latin", "latin-ext", "cyrillic", "cyrillic-ext", "greek", "greek-ext", "vietnamese"];
+const WEIGHTS: FontWeight[] = [400, 600, 800];
 
-  return [
-    { name: "Brand", data: regular, weight: 400 as const, style: "normal" as const },
-    { name: "Brand", data: semibold, weight: 600 as const, style: "normal" as const },
-    { name: "Brand", data: bold, weight: 800 as const, style: "normal" as const },
-  ];
+function loadFonts(brand: Brand, baseDir: string): FontEntry[] {
+  const interDir = join(SKILL_DIR, "node_modules/@fontsource/inter/files");
+  const entry = (name: string, data: Buffer, weight: FontWeight): FontEntry => ({ name, data, weight, style: "normal" });
+  const inter = (subset: string, weight: FontWeight, name: string) =>
+    entry(name, readFileSync(join(interDir, `inter-${subset}-${weight}-normal.woff`)), weight);
+  const file = (p: string) => readFileSync(resolve(baseDir, p));
+
+  const fonts: FontEntry[] = [];
+  const customRegular = brand.fonts?.regular;
+  const customBold = brand.fonts?.bold;
+  if (customRegular || customBold) {
+    // Whichever weight the brand font lacks reuses the other file; Satori picks the
+    // closest weight it has for a family.
+    if (customRegular) fonts.push(entry("Brand", file(customRegular), 400));
+    if (customBold) {
+      const bold = file(customBold);
+      fonts.push(entry("Brand", bold, 600), entry("Brand", bold, 800));
+    }
+  } else {
+    for (const w of WEIGHTS) fonts.push(inter("latin", w, "Brand"));
+  }
+  // Every Inter subset sits behind the brand font (a custom font that lacks "ñ" or
+  // Cyrillic degrades to Inter rather than to a missing glyph). Harmless duplication of
+  // latin when the brand font is Inter itself.
+  for (const subset of INTER_SUBSETS) for (const w of WEIGHTS) fonts.push(inter(subset, w, `Inter ${subset}`));
+  (brand.fonts?.fallback ?? []).forEach((p, i) => {
+    const data = file(p);
+    for (const w of WEIGHTS) fonts.push(entry(`Fallback ${i}`, data, w));
+  });
+  return fonts;
+}
+
+const FONT_EXT_OK = new Set([".ttf", ".otf", ".woff"]);
+
+/** Problems with a font path, or null when it looks loadable. */
+function fontProblem(p: string, baseDir: string): string | null {
+  const abs = resolve(baseDir, p);
+  if (!existsSync(abs)) return `font not found: ${p}`;
+  const ext = extname(p).toLowerCase();
+  if (ext === ".woff2") return `${p}: WOFF2 is not supported by Satori; use the TTF/OTF/WOFF version`;
+  if (!FONT_EXT_OK.has(ext)) return `${p}: unsupported font type (use ttf/otf/woff)`;
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -616,11 +670,49 @@ function resolveSpec(spec: ImageSpec, job: Job, primary: string, baseDir: string
   };
 }
 
+/**
+ * Normalize a color to "#rrggbb". Accepts #rgb, #rrggbb, #rrggbbaa (alpha dropped) and
+ * rgb()/rgba() — the forms an agent is likely to copy from a theme file. Anything else
+ * (named colors, hsl, Tailwind tokens) returns null so validation can point at it,
+ * because `hexA` would otherwise silently produce rgba(NaN,...) and the glow and badge
+ * disappear without an error.
+ */
+function normalizeColor(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(s);
+  if (hex) {
+    const m = hex[1];
+    const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m.slice(0, 6);
+    return `#${full.toLowerCase()}`;
+  }
+  const rgb = /^rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*(?:[,/]\s*[\d.%]+\s*)?\)$/i.exec(s);
+  if (rgb) {
+    const to2 = (x: string) => Math.min(255, parseInt(x, 10)).toString(16).padStart(2, "0");
+    return `#${to2(rgb[1])}${to2(rgb[2])}${to2(rgb[3])}`;
+  }
+  return null;
+}
+
+/** `hex` is already normalized (#rrggbb) by the time templates call this. */
 function hexA(hex: string, alpha: number) {
-  const m = hex.replace("#", "");
-  const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m.slice(0, 6);
-  const n = parseInt(full, 16);
+  const n = parseInt(hex.slice(1, 7), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+const COLOR_KEYS = ["bg", "bg2", "accent", "text", "muted"] as const;
+
+/** Normalize every color in a colors object in place, returning error strings. */
+function normalizeColors(where: string, colors: Record<string, unknown> | undefined): string[] {
+  const errs: string[] = [];
+  if (!colors) return errs;
+  for (const k of COLOR_KEYS) {
+    if (colors[k] === undefined) continue;
+    const n = normalizeColor(colors[k]);
+    if (n) colors[k] = n;
+    else errs.push(`${where}.${k}: "${String(colors[k])}" is not a color I can use (use #rrggbb or rgb(r,g,b))`);
+  }
+  return errs;
 }
 
 const MODES: LangMode[] = ["single", "multi", "bilingual"];
@@ -654,12 +746,33 @@ function resolveI18n(cfg: Config, args: ReturnType<typeof parseArgs>) {
   return { mode, languages, lang, primary: mode === "single" ? lang : languages[0] };
 }
 
-function validate(cfg: Config, needed: string[]) {
+/** Screenshots each template consumes. Extras are a mistake (silently dropped otherwise). */
+const SHOTS_PER_TEMPLATE: Record<TemplateId, number> = { hero: 1, duo: 2, trio: 3, statement: 0 };
+
+/**
+ * Check the config and normalize colors in place. Collects every problem instead of
+ * stopping at the first so the agent can fix shots.json in one pass.
+ */
+function validate(cfg: Config, needed: string[], baseDir: string) {
   const errs: string[] = [];
   if (!cfg.brand?.name) errs.push("brand.name is required");
   for (const l of missingLangs(cfg.brand?.name, needed)) errs.push(`brand.name: missing "${l}"`);
   if (!cfg.brand?.colors?.bg || !cfg.brand?.colors?.accent || !cfg.brand?.colors?.text)
     errs.push("brand.colors.bg, accent and text are required");
+  errs.push(...normalizeColors("brand.colors", cfg.brand?.colors));
+  if (cfg.brand?.bezel !== undefined) {
+    const b = normalizeColor(cfg.brand.bezel);
+    if (b) cfg.brand.bezel = b;
+    else errs.push(`brand.bezel: "${cfg.brand.bezel}" is not a color I can use (use #rrggbb or rgb(r,g,b))`);
+  }
+  for (const [key, p] of Object.entries(cfg.brand?.fonts ?? {})) {
+    for (const path of Array.isArray(p) ? p : [p]) {
+      const problem = typeof path === "string" ? fontProblem(path, baseDir) : `brand.fonts.${key} must be a path`;
+      if (problem) errs.push(`brand.fonts.${key}: ${problem}`);
+    }
+  }
+  if (cfg.brand?.icon && !existsSync(resolve(baseDir, cfg.brand.icon))) errs.push(`brand.icon: not found: ${cfg.brand.icon}`);
+
   if (!Array.isArray(cfg.images) || cfg.images.length === 0) errs.push("images[] must have at least one entry");
   const ids = new Set<string>();
   for (const img of cfg.images ?? []) {
@@ -672,6 +785,20 @@ function validate(cfg: Config, needed: string[]) {
     for (const field of ["headline", "subhead", "badge"] as const) {
       const miss = missingLangs(img[field], needed);
       if (miss.length) errs.push(`${img.id}.${field}: missing translation for ${miss.map((l) => `"${l}"`).join(", ")}`);
+    }
+    errs.push(...normalizeColors(`${img.id}.colors`, img.colors));
+
+    const want = SHOTS_PER_TEMPLATE[img.template];
+    if (want !== undefined) {
+      const lists: [string, string[]][] = Array.isArray(img.screenshots)
+        ? [["screenshots", img.screenshots]]
+        : img.screenshots
+          ? Object.entries(img.screenshots).map(([l, v]) => [`screenshots.${l}`, v] as [string, string[]])
+          : [["screenshots", []]];
+      for (const [where, list] of lists) {
+        if (list.length !== want)
+          errs.push(`${img.id}.${where}: template "${img.template}" takes exactly ${want} screenshot(s), got ${list.length}`);
+      }
     }
   }
   if (errs.length) throw new Error("Invalid config:\n  - " + errs.join("\n  - "));
@@ -690,7 +817,8 @@ async function main() {
         "",
         "Options:",
         "  --only id1,id2          render only these image ids",
-        "  --out dir               output folder (default: config.output or ./out)",
+        "  --out dir               output folder, relative to the current directory",
+        "                          (default: config.output, relative to shots.json, or ./out)",
         "  --lang es               single language → out/",
         "  --mode multi            one set per language → out/<lang>/",
         "  --mode bilingual        primary text + translation subtitles → out/<es+en>/",
@@ -709,9 +837,10 @@ async function main() {
   const i18n = resolveI18n(cfg, args);
   const jobs = planJobs(i18n.mode, i18n.languages, i18n.lang);
   const needed = [...new Set(jobs.flatMap((j) => [j.lang, ...j.subs]))];
-  validate(cfg, needed);
+  validate(cfg, needed, baseDir);
 
-  const outRoot = resolve(baseDir, args.out || cfg.output || "out");
+  // --out behaves like any CLI flag (relative to cwd); config.output stays next to the JSON.
+  const outRoot = args.out ? resolve(args.out) : resolve(baseDir, cfg.output || "out");
   const fonts = loadFonts(cfg.brand as Brand, baseDir);
   const icon = cfg.brand.icon ? loadImage(resolve(baseDir, cfg.brand.icon)) : undefined;
   const cache = new Map<string, LoadedImage>();
@@ -740,8 +869,20 @@ async function main() {
         const colors = { bg: c.bg, bg2: c.bg2 ?? c.bg, accent: c.accent, text: c.text, muted: c.muted ?? hexA(c.text, 0.72) };
         const ctx: Ctx = { W, H, colors, brand, icon, shots: spec.screenshots.map(getShot), spec };
         const tree = RENDERERS[spec.template](ctx);
+        // Satori calls this for every run of text no loaded font can draw. Rather than
+        // ship a PNG full of "NO GLYPH" boxes (and a green ✓), fail with the exact text.
+        const noGlyph: string[] = [];
+        const loadAdditionalAsset = async (languageCode: string, segment: string) => {
+          if (languageCode !== "emoji") noGlyph.push(`"${segment}" (${languageCode})`);
+          return [];
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const svg = await satori(tree as any, { width: W, height: H, fonts });
+        const svg = await satori(tree as any, { width: W, height: H, fonts, loadAdditionalAsset });
+        if (noGlyph.length)
+          throw new Error(
+            `no font covers ${[...new Set(noGlyph)].join(", ")}. ` +
+              `Add a font with those glyphs to brand.fonts.fallback (e.g. Noto Sans JP/KR/SC/Arabic/Thai).`,
+          );
         const png = new Resvg(svg, { fitTo: { mode: "original" } }).render().asPng();
         const file = join(outDir, `${spec.id}.png`);
         writeFileSync(file, png);

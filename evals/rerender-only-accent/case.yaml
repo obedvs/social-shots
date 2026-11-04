@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: rerender-only-accent
+expected_outcome: |
+  The agent edits social-shots/shots.json in place (brand accent to #FF7A59, launch-x
+  headline to "Habits that *stick*"), re-renders only launch-x with the --only flag,
+  opens the resulting PNG to check contrast and wrapping, and reports what changed.
+  It does not rewrite the plan from scratch, re-run the discovery phase, ask for
+  screenshots again, or render the other two images.
+context:
+  scaffold_script: place-files.sh
