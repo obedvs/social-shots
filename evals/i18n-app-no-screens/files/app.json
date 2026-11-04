@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Dúo",
+    "slug": "duo-notes",
+    "scheme": "duonotes",
+    "version": "2.1.0",
+    "locales": {
+      "es": "./locales/es.json",
+      "en": "./locales/en.json"
+    },
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#0E1B2A"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization"
+    ]
+  }
+}

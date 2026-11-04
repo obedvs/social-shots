@@ -1,6 +1,6 @@
 {
   "name": "social-shots",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Agent skill: turn a mobile app into on-brand social media images",
   "type": "module",

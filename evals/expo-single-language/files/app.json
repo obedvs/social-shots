@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Habitly",
+    "slug": "habitly",
+    "scheme": "habitly",
+    "version": "1.0.0",
+    "icon": "./icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#120C2E"
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.habitly"
+    },
+    "android": {
+      "package": "com.example.habitly",
+      "adaptiveIcon": {
+        "backgroundColor": "#120C2E"
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

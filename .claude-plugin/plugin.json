@@ -1,6 +1,6 @@
 {
   "name": "social-shots",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Turn a mobile app (Expo / React Native) into on-brand social media images with phone mockups, headlines and captions — in one language, several, or bilingual.",
   "author": { "name": "Obed" },
   "homepage": "https://github.com/obedvs/social-shots",

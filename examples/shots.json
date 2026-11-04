@@ -1,4 +1,5 @@
 {
+  "$schema": "../shots.schema.json",
   "brand": {
     "name": "Habitly",
     "icon": "assets/icon.png",

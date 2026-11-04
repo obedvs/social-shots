@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: i18n-app-no-screens
+expected_outcome: |
+  The app ships Spanish and English (app.json locales, locales/*.json, expo-localization)
+  and there are no screenshots anywhere. The agent notices both: it asks once which
+  language mode the user wants (single / multi / bilingual) and asks for simulator
+  screenshots, naming the specific screens it wants (home, lists, reminders) and asking
+  for realistic demo data. It does not fabricate screenshots or render phone-mockup
+  templates with placeholder images. If it proceeds without an answer, it only renders
+  statement images (which need no screenshot) and keeps both languages. Replies in
+  Spanish, matching the user.
+context:
+  scaffold_script: place-files.sh

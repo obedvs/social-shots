@@ -1,6 +1,6 @@
 ---
 name: social-shots
-description: Turn a mobile app project (Expo / React Native first) into a ready-to-post set of social media marketing images — X, LinkedIn, Instagram, Stories, Product Hunt — with on-brand headlines, phone mockups of real screenshots, and post captions, in one language, several languages, or bilingual with translation subtitles. Use when the user says /social-shots, "brag with images", or asks for social/marketing images, launch graphics or promo posts for their app.
+description: Turn a mobile app project (Expo / React Native first) into a ready-to-post set of social media marketing images — X, LinkedIn, Instagram, Stories, Product Hunt, OG/link preview — with on-brand headlines, phone mockups of real screenshots, and post captions, in one language, several languages, or bilingual with translation subtitles. Use whenever the user says /social-shots or "brag with images", or wants to announce, launch, promote or show off their app visually — social/marketing images, launch graphics, promo posts, a Product Hunt gallery, an og:image, a Stories/Reels cover, "something to post about my app" — even if they don't say "image" or name a platform. Not for App Store / Play Store listing screenshots.
 ---
 
 # /social-shots
@@ -13,6 +13,10 @@ iterate fast.
 `SKILL_DIR` below means the folder containing this SKILL.md (when installed as a Claude
 Code plugin, that's `${CLAUDE_PLUGIN_ROOT}`). Never write into `SKILL_DIR` except for
 `npm install`; all project output goes in the user's project.
+
+The full `shots.json` field reference is [shots.schema.json](shots.schema.json); a worked
+example is [examples/shots.json](examples/shots.json) and the caption format is
+[examples/captions.md](examples/captions.md).
 
 ## Output
 
@@ -54,6 +58,13 @@ Screenshots can be localized too: put them in `screens/es/`, `screens/en/` and r
 language, then to `screens/1.png` — so UI that doesn't change across languages needs only
 one copy. In bilingual mode the primary language's screenshots are used.
 
+**Scripts the bundled font covers:** Latin (incl. Polish, Turkish, Czech, Romanian…),
+Cyrillic, Greek and Vietnamese. Japanese, Chinese, Korean, Arabic, Hebrew, Thai, Hindi
+etc. need a font file with those glyphs: the renderer stops with
+`no font covers "続習慣" (ja-JP)` instead of drawing empty boxes. Fix it by downloading
+the matching Noto Sans (e.g. Noto Sans JP, TTF/OTF) into `social-shots/fonts/` and listing
+it in `brand.fonts.fallback`. Don't drop the language.
+
 ## Workflow
 
 Work through these phases in order. Keep the user in the loop at the two checkpoints
@@ -69,6 +80,8 @@ PowerShell: `if (-not (Test-Path "$SKILL_DIR/node_modules")) { npm install --pre
 
 Requires Node 18+. No API keys, no network at render time. Works on macOS, Linux and
 Windows (iOS simulator capture in phase 3 is macOS-only; Android works everywhere).
+Plugin updates move `${CLAUDE_PLUGIN_ROOT}`, so the check above simply reinstalls on
+the first run after an update.
 
 ### 2. Understand the app
 
@@ -144,7 +157,11 @@ if they're not around, proceed.
       "text": "#FFFFFF",    // headline
       "muted": "#C9C3E6"    // subhead (optional, defaults to text @72%)
     },
-    "fonts": { "regular": "../assets/fonts/Brand-Regular.ttf", "bold": "../assets/fonts/Brand-Bold.ttf" }, // optional; default Inter
+    "fonts": {                                                 // optional; default Inter
+      "regular": "../assets/fonts/Brand-Regular.ttf",
+      "bold": "../assets/fonts/Brand-Bold.ttf",
+      "fallback": ["fonts/NotoSansJP-Regular.ttf"]            // only for scripts Inter lacks (CJK, Arabic…)
+    },
     "bezel": "#0B0B0F"      // optional phone frame color
   },
   "output": "out",
@@ -201,26 +218,35 @@ Single-language configs can keep using plain strings everywhere.
 - Write in the language the user's app/audience uses.
 
 **Color rules**
+- Colors are `#rrggbb` (or `rgb(r,g,b)`); theme tokens like `hsl(...)`, `colors.primary` or
+  `var(--bg)` must be resolved to a literal value first — the renderer rejects them.
 - Background should contrast strongly with the screenshots' dominant color.
 - `accent` must be readable on `bg` — use the brand's brightest color, not its darkest.
 - Keep one palette for the whole set so it reads as a campaign; vary only via per-image overrides if needed.
 
 ### 6. Render
 
-```bash
-R="npx --prefix $SKILL_DIR tsx $SKILL_DIR/scripts/render.ts"
-$R social-shots/shots.json                                  # mode from i18n (default: single, primary language)
-$R social-shots/shots.json --lang en                        # single, in English → out/
-$R social-shots/shots.json --mode multi                     # every language → out/es/, out/en/
-$R social-shots/shots.json --mode multi --langs es,en,pt    # choose languages
-$R social-shots/shots.json --mode bilingual --langs es,en   # es headline + en subtitle → out/es+en/
-$R social-shots/shots.json --only launch-x,launch-story     # re-render only some (combine with any mode)
+The command is the same on every OS (bash and PowerShell), run from the project root:
+
+```
+node "$SKILL_DIR/node_modules/tsx/dist/cli.mjs" "$SKILL_DIR/scripts/render.ts" social-shots/shots.json [options]
 ```
 
-The renderer fails with a list like `launch-x.headline: missing translation for "en"`
-when a language the mode needs is missing — fill it in rather than dropping the language.
+| options | effect |
+|---------|--------|
+| *(none)* | mode from `i18n` (default: single, primary language) → `out/` |
+| `--lang en` | single, in English → `out/` |
+| `--mode multi` | every language → `out/es/`, `out/en/` |
+| `--mode multi --langs es,en,pt` | choose the languages |
+| `--mode bilingual --langs es,en` | es headline + en subtitle → `out/es+en/` |
+| `--only launch-x,launch-story` | re-render only some ids (combine with any mode) |
+| `--out dir` | output folder relative to the current directory (default: `output` in the JSON, relative to it) |
 
-If `npx --prefix` isn't resolving `tsx`, run `"$SKILL_DIR/node_modules/.bin/tsx"` directly.
+The renderer validates the whole file first and lists every problem at once — a missing
+translation (`launch-x.headline: missing translation for "en"`), a wrong screenshot count
+for the template, a color it can't parse, a font it can't find, a script no font covers.
+Fix the JSON rather than dropping the language or the image. Images are rendered
+independently, so one failure doesn't block the rest.
 
 ### 7. Review every image → checkpoint
 
@@ -239,10 +265,11 @@ clean, then show the user the set.
 
 ### 8. Captions
 
-Write captions with, per image: the platform, a ready-to-paste caption (hook first
-line, 1–3 short lines, CTA with store link placeholder), and 3–5 hashtags for
-Instagram/LinkedIn only. Emojis welcome here. Match the tone the user asked for (default:
-confident, plain, no hype words like "revolutionary").
+Write captions following the layout of [examples/captions.md](examples/captions.md): per
+image, the platform, a ready-to-paste caption (hook first line, 1–3 short lines, CTA with
+store link placeholder), and 3–5 hashtags for Instagram/LinkedIn only. Emojis welcome
+here. Match the tone the user asked for (default: confident, plain, no hype words like
+"revolutionary").
 
 - `single` → `social-shots/captions.md` in that language.
 - `multi` → `social-shots/captions/<lang>.md`, one file per language, written natively
@@ -266,8 +293,13 @@ Tell the user where the images are, which one to post first, and offer variants
 
 ## Troubleshooting
 
-- `Image not found` — paths in `shots.json` are relative to the JSON file.
-- Custom font fails — Satori needs TTF/OTF/WOFF, not WOFF2.
-- `needs N screenshot(s)` — template/screenshot count mismatch (see templates table).
+- `Image not found` / `brand.icon: not found` — paths in `shots.json` are relative to the JSON file.
+- `WOFF2 is not supported` — Satori needs TTF/OTF/WOFF; Expo apps usually ship TTF in `assets/fonts/`.
+- `no font covers "…"` — the copy uses a script Inter lacks (CJK, Arabic, Thai…); add a
+  Noto Sans file for it to `brand.fonts.fallback`. See "Language modes".
+- `takes exactly N screenshot(s)` — template/screenshot count mismatch (see templates table).
+- `is not a color I can use` — use `#rrggbb` or `rgb()`, not theme tokens or named colors.
 - Screenshots with transparent or rounded corners already applied work fine; avoid
   screenshots that already include a device frame (they'll get double-framed).
+- Output landed somewhere unexpected — `--out` is relative to where you ran the command;
+  `output` in the JSON is relative to the JSON.

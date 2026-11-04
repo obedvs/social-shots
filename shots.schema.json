@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/obedvs/social-shots/shots.schema.json",
+  "title": "social-shots image plan (shots.json)",
+  "description": "One file describes the whole set: brand, languages and one entry per image. All paths are relative to this file.",
+  "type": "object",
+  "required": ["brand", "images"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "brand": {
+      "type": "object",
+      "required": ["name", "colors"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/definitions/text", "description": "App name shown next to the icon." },
+        "icon": { "type": "string", "description": "App icon (PNG/JPG/WebP). Expo: ../assets/images/icon.png" },
+        "colors": {
+          "type": "object",
+          "required": ["bg", "accent", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "bg": { "$ref": "#/definitions/color", "description": "Gradient start, usually the dark brand color." },
+            "bg2": { "$ref": "#/definitions/color", "description": "Gradient end. Defaults to bg." },
+            "accent": { "$ref": "#/definitions/color", "description": "Highlighted *words*, badge, glow. Must read well on bg." },
+            "text": { "$ref": "#/definitions/color", "description": "Headline color." },
+            "muted": { "$ref": "#/definitions/color", "description": "Subhead color. Defaults to text at 72% opacity." }
+          }
+        },
+        "fonts": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional brand fonts (TTF/OTF/WOFF, not WOFF2). Default is Inter, which covers Latin, Latin-ext, Cyrillic, Greek and Vietnamese.",
+          "properties": {
+            "regular": { "type": "string" },
+            "bold": { "type": "string" },
+            "fallback": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Extra font files tried for glyphs the main fonts lack, e.g. Noto Sans JP/KR/SC, Noto Sans Arabic, Noto Sans Thai."
+            }
+          }
+        },
+        "bezel": { "$ref": "#/definitions/color", "description": "Phone frame color. Default #0B0B0F." }
+      }
+    },
+    "output": {
+      "type": "string",
+      "default": "out",
+      "description": "Output folder, relative to this file. The --out flag (relative to the current directory) overrides it."
+    },
+    "i18n": {
+      "type": "object",
+      "required": ["languages"],
+      "additionalProperties": false,
+      "properties": {
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$" },
+          "description": "Language codes; the first is the primary language."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["single", "multi", "bilingual"],
+          "default": "single",
+          "description": "single: one set in `lang` → out/. multi: one set per language → out/<lang>/. bilingual: primary text + translation subtitles → out/<es+en>/."
+        },
+        "lang": { "type": "string", "description": "Language for single mode. Defaults to languages[0]." }
+      }
+    },
+    "images": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/image" }
+    }
+  },
+  "definitions": {
+    "color": {
+      "type": "string",
+      "pattern": "^(#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\\(.*\\))$",
+      "description": "#rgb, #rrggbb, #rrggbbaa or rgb(r,g,b). Theme tokens, hsl() and named colors are rejected."
+    },
+    "text": {
+      "description": "A plain string (same in every language) or one string per language code.",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      ]
+    },
+    "screenshots": {
+      "description": "Screenshot paths. `{lang}` is replaced per language and falls back to the primary language, then to the path without the `{lang}/` segment. Or one list per language.",
+      "oneOf": [
+        { "type": "array", "items": { "type": "string" } },
+        {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        }
+      ]
+    },
+    "image": {
+      "type": "object",
+      "required": ["id", "template", "format", "headline"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "description": "Output file name without extension. Unique."
+        },
+        "template": {
+          "type": "string",
+          "enum": ["hero", "duo", "trio", "statement"],
+          "description": "hero: 1 phone. duo: 2 tilted phones. trio: 3 phones, middle featured. statement: icon + text, no phone."
+        },
+        "format": {
+          "type": "string",
+          "enum": ["x", "linkedin", "og", "ig-square", "ig-portrait", "story", "ph"],
+          "description": "x 1200×675 · linkedin 1200×627 · og 1200×630 · ig-square 1080×1080 · ig-portrait 1080×1350 · story 1080×1920 · ph 1270×760"
+        },
+        "badge": { "$ref": "#/definitions/text", "description": "1–3 words, rendered uppercase in a pill above the headline." },
+        "headline": { "$ref": "#/definitions/text", "description": "3–7 words. Wrap 1–3 words in *asterisks* to color them with the accent." },
+        "subhead": { "$ref": "#/definitions/text", "description": "One short sentence. Optional." },
+        "screenshots": {
+          "$ref": "#/definitions/screenshots",
+          "description": "Exactly 1 for hero, 2 for duo, 3 for trio, none for statement."
+        },
+        "colors": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Per-image overrides of brand.colors.",
+          "properties": {
+            "bg": { "$ref": "#/definitions/color" },
+            "bg2": { "$ref": "#/definitions/color" },
+            "accent": { "$ref": "#/definitions/color" },
+            "text": { "$ref": "#/definitions/color" },
+            "muted": { "$ref": "#/definitions/color" }
+          }
+        }
+      }
+    }
+  }
+}
