@@ -6,5 +6,6 @@
   "homepage": "https://github.com/obedvs/social-shots",
   "repository": "https://github.com/obedvs/social-shots",
   "license": "MIT",
+  "icon": "./icon.svg",
   "keywords": ["marketing", "social-media", "expo", "react-native", "screenshots", "i18n"]
 }
