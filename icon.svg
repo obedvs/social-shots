@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="social-shots">
+  <title>social-shots</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A2A6B"/>
+      <stop offset="1" stop-color="#1F6FEB"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.24" r="0.55">
+      <stop offset="0" stop-color="#FFE680" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#FFD43B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EAF2FF"/>
+      <stop offset="1" stop-color="#C9DCFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- tile -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+
+  <!-- back card (a second shot), tilted left -->
+  <g transform="rotate(-12 196 290)">
+    <rect x="112" y="150" width="168" height="280" rx="30" fill="#0A1F4D" opacity="0.55"/>
+  </g>
+
+  <!-- phone, tilted right -->
+  <g transform="rotate(8 262 286)">
+    <rect x="166" y="120" width="192" height="332" rx="36" fill="#071634"/>
+    <rect x="178" y="132" width="168" height="308" rx="26" fill="url(#screen)"/>
+    <!-- headline: one dark line + one yellow highlight -->
+    <rect x="198" y="162" width="100" height="16" rx="8" fill="#0A2A6B"/>
+    <rect x="198" y="188" width="74" height="16" rx="8" fill="#FFC300"/>
+    <!-- picture card -->
+    <rect x="198" y="222" width="128" height="104" rx="16" fill="#1F6FEB"/>
+    <path d="M206 316 L244 270 L268 296 L284 280 L318 316 Z" fill="#0A2A6B" opacity="0.6"/>
+    <circle cx="300" cy="248" r="11" fill="#FFD43B"/>
+    <!-- caption lines -->
+    <rect x="198" y="344" width="128" height="10" rx="5" fill="#0A2A6B" opacity="0.35"/>
+    <rect x="198" y="364" width="92" height="10" rx="5" fill="#0A2A6B" opacity="0.35"/>
+  </g>
+
+  <!-- sparkle -->
+  <path d="M398 74 C404 112 418 126 456 132 C418 138 404 152 398 190 C392 152 378 138 340 132 C378 126 392 112 398 74 Z" fill="#FFD43B"/>
+  <path d="M440 214 C442 228 448 234 462 236 C448 238 442 244 440 258 C438 244 432 238 418 236 C432 234 438 228 440 214 Z" fill="#FFE680"/>
+</svg>
